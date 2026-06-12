@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ライフプラン">
+<title>ライフプラン管理</title>
+<style>
+:root {
+  --bg: #f7f6f3;
+  --card: #ffffff;
+  --text: #1a1a18;
+  --muted: #6b6b66;
+  --hint: #a8a8a0;
+  --border: rgba(0,0,0,0.09);
+  --border-md: rgba(0,0,0,0.15);
+  --green: #1D9E75;
+  --green-bg: #E1F5EE;
+  --green-text: #0F6E56;
+  --red: #E24B4A;
+  --red-bg: #FCEBEB;
+  --red-text: #A32D2D;
+  --blue: #378ADD;
+  --blue-bg: #E6F1FB;
+  --blue-text: #185FA5;
+  --amber-bg: #FAEEDA;
+  --amber-text: #854F0B;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111110;
+    --card: #1e1e1c;
+    --text: #e8e6df;
+    --muted: #9c9a92;
+    --hint: #6b6b66;
+    --border: rgba(255,255,255,0.08);
+    --border-md: rgba(255,255,255,0.15);
+    --green-bg: #0a3326;
+    --green-text: #5DCAA5;
+    --red-bg: #2d1111;
+    --red-text: #F09595;
+    --blue-bg: #0a1e33;
+    --blue-text: #85B7EB;
+    --amber-bg: #2d1f0a;
+    --amber-text: #EF9F27;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh;padding-bottom:calc(72px + var(--safe-bottom))}
+/* ナビゲーション */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:0.5px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;gap:3px;background:none;border:none;color:var(--hint);font-size:10px;cursor:pointer;transition:color .15s}
+.nav-item.active{color:var(--blue)}
+.nav-icon{font-size:22px;line-height:1}
+/* ページ */
+.page{display:none;padding:16px 16px 8px}
+.page.active{display:block}
+/* ヘッダー */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.page-title{font-size:20px;font-weight:600;letter-spacing:-0.3px}
+/* カード */
+.card{background:var(--card);border-radius:var(--radius);border:0.5px solid var(--border);padding:16px;margin-bottom:12px}
+.card-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+/* メトリクス */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.metric{background:var(--card);border-radius:var(--radius-sm);border:0.5px solid var(--border);padding:14px 12px}
+.metric-label{font-size:11px;color:var(--muted);margin-bottom:4px}
+.metric-value{font-size:20px;font-weight:600;letter-spacing:-0.5px}
+.metric-value.pos{color:var(--green)}
+.metric-value.neg{color:var(--red)}
+/* リスト行 */
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.row:last-child{border-bottom:none}
+.row-label{font-size:13px;color:var(--muted)}
+.row-value{font-size:13px;font-weight:500}
+/* バッジ */
+.badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.badge-plan{background:var(--blue-bg);color:var(--blue-text)}
+.badge-actual{background:var(--green-bg);color:var(--green-text)}
+.badge-pos{background:var(--green-bg);color:var(--green-text)}
+.badge-neg{background:var(--red-bg);color:var(--red-text)}
+/* フォーム */
+.form-group{margin-bottom:12px}
+.form-label{font-size:12px;color:var(--muted);font-weight:500;display:block;margin-bottom:5px}
+.form-hint{font-size:11px;color:var(--hint);margin-top:2px}
+input[type=number],input[type=text],select{width:100%;background:var(--bg);border:0.5px solid var(--border-md);border-radius:var(--radius-sm);padding:10px 12px;font-size:15px;color:var(--text);-webkit-appearance:none;appearance:none;outline:none}
+input[type=number]:focus,input[type=text]:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(55,138,221,.12)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* ボタン */
+.btn{width:100%;padding:14px;font-size:15px;font-weight:600;border-radius:var(--radius-sm);border:none;cursor:pointer;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(0.98)}
+.btn-primary{background:var(--text);color:var(--card)}
+.btn-secondary{background:var(--bg);border:0.5px solid var(--border-md);color:var(--text)}
+/* プログレスバー */
+.progress{height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .4s}
+/* ステータス */
+.status{text-align:center;padding:12px;font-size:13px;border-radius:var(--radius-sm);margin-bottom:12px}
+.status.loading{background:var(--blue-bg);color:var(--blue-text)}
+.status.success{background:var(--green-bg);color:var(--green-text)}
+.status.error{background:var(--red-bg);color:var(--red-text)}
+/* チャート */
+.chart-wrap{position:relative;width:100%}
+/* セパレーター */
+.sep{height:1px;background:var(--border);margin:16px 0}
+/* 月セレクター */
+.month-picker{display:flex;gap:8px;align-items:center;margin-bottom:16px}
+.month-picker select{flex:1}
+/* 空状態 */
+.empty{text-align:center;padding:32px 16px;color:var(--hint);font-size:13px}
+/* 入力フィールドグループ */
+.input-field{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.input-field:last-child{border-bottom:none}
+.input-field-info{flex:1}
+.input-field-name{font-size:13px;font-weight:500}
+.input-field-budget{font-size:11px;color:var(--hint);margin-top:1px}
+.input-field input{width:120px;text-align:right;font-size:14px;background:var(--bg);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text)}
+</style>
+</head>
+<body>
+
+<div id="page-dash" class="page active">
+  <div class="page-header">
+    <span class="page-title">ライフプラン</span>
+    <span id="dash-month-label" style="font-size:13px;color:var(--muted)"></span>
+  </div>
+  <div id="status-dash"></div>
+  <div id="dash-metrics" class="metrics"></div>
+  <div class="card">
+    <div class="card-title">収支推移</div>
+    <div class="chart-wrap" style="height:180px">
+      <canvas id="chart-dash" role="img" aria-label="収支推移グラフ">収支推移</canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">今月のサマリー</div>
+    <div id="dash-summary"></div>
+  </div>
+</div>
+
+<div id="page-entry" class="page">
+  <div class="page-header"><span class="page-title">実績入力</span></div>
+  <div id="status-entry"></div>
+  <div class="month-picker">
+    <select id="entry-year"></select>
+    <select id="entry-month"></select>
+  </div>
+  <div class="card">
+    <div class="card-title">イベント</div>
+    <input type="text" id="entry-event" placeholder="例: 両家顔合わせ">
+  </div>
+  <div class="card">
+    <div class="card-title">収入</div>
+    <div id="entry-income"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">支出</div>
+    <div id="entry-expense"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">口座残高（月末）</div>
+    <div id="entry-accounts"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">残債・NISA残高</div>
+    <div id="entry-debts"></div>
+  </div>
+  <button class="btn btn-primary" onclick="saveEntry()" id="save-btn">スプレッドシートに保存</button>
+  <div style="height:12px"></div>
+</div>
+
+<div id="page-compare" class="page">
+  <div class="page-header"><span class="page-title">予実比較</span></div>
+  <div class="month-picker">
+    <select id="cmp-year" onchange="renderCompare()"></select>
+    <select id="cmp-month" onchange="renderCompare()"></select>
+  </div>
+  <div class="card">
+    <div class="card-title">収入</div>
+    <div id="cmp-income"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">支出</div>
+    <div id="cmp-expense"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">収支・資産</div>
+    <div id="cmp-total"></div>
+  </div>
+</div>
+
+<div id="page-report" class="page">
+  <div class="page-header"><span class="page-title">レポート</span></div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <select id="rpt-range" onchange="renderReport()" style="width:auto;flex:1">
+      <option value="6">直近6ヶ月</option>
+      <option value="12">直近12ヶ月</option>
+      <option value="all">全期間</option>
+    </select>
+  </div>
+  <div class="card">
+    <div class="card-title">月別収支（予算 vs 実績）</div>
+    <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--muted)">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:2px;background:#378ADD;display:inline-block;border-radius:1px"></span>予算</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:2px;background:#1D9E75;display:inline-block;border-radius:1px"></span>実績</span>
+    </div>
+    <div class="chart-wrap" style="height:200px">
+      <canvas id="chart-rpt-cf" role="img" aria-label="月別収支グラフ">月別収支</canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">資産合計推移</div>
+    <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--muted)">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:2px;background:#378ADD;display:inline-block;border-radius:1px;border-top:2px dashed #378ADD;height:0"></span>予算</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:2px;background:#1D9E75;display:inline-block;border-radius:1px"></span>実績</span>
+    </div>
+    <div class="chart-wrap" style="height:200px">
+      <canvas id="chart-rpt-assets" role="img" aria-label="資産合計推移グラフ">資産合計推移</canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">残債推移（実績）</div>
+    <div class="chart-wrap" style="height:160px">
+      <canvas id="chart-rpt-debt" role="img" aria-label="残債推移グラフ">残債推移</canvas>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-item active" onclick="showPage('dash')" id="nav-dash">
+    <span class="nav-icon">⌂</span>
+    <span>ホーム</span>
+  </button>
+  <button class="nav-item" onclick="showPage('entry')" id="nav-entry">
+    <span class="nav-icon">✎</span>
+    <span>入力</span>
+  </button>
+  <button class="nav-item" onclick="showPage('compare')" id="nav-compare">
+    <span class="nav-icon">⇄</span>
+    <span>予実比較</span>
+  </button>
+  <button class="nav-item" onclick="showPage('report')" id="nav-report">
+    <span class="nav-icon">↗</span>
+    <span>レポート</span>
+  </button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwtT7Y9hCB95x1dDCP50FrKnyp-1pZ60QNbFzT-BoAinKz7UCmUd867Z8A1vXhRenCe/exec';
+
+const INCOME_FIELDS = [
+  {key:'主収入',label:'主収入'},
+  {key:'賞与',label:'賞与'},
+  {key:'副収入',label:'副収入'},
+  {key:'臨時収入',label:'臨時収入'},
+  {key:'立替経費',label:'立替経費（収入）'},
+];
+const EXPENSE_FIELDS = [
+  {key:'生活支出',label:'生活支出'},
+  {key:'個人支出',label:'個人支出'},
+  {key:'臨時支出',label:'臨時支出'},
+  {key:'ギャンブル',label:'支出（ギャンブル）'},
+  {key:'返済_アコム',label:'返済（アコム）'},
+  {key:'NISA_積立',label:'NISA（積立）'},
+  {key:'NISA_成長',label:'NISA（成長）'},
+  {key:'共通口座',label:'共通口座'},
+  {key:'立替経費_出',label:'立替経費（支出）'},
+];
+const ACCOUNT_FIELDS = [
+  {key:'みずほ',label:'みずほ銀行'},
+  {key:'ゆうちょ',label:'ゆうちょ銀行'},
+  {key:'楽天',label:'楽天銀行'},
+];
+const DEBT_FIELDS = [
+  {key:'残債_ビューカード',label:'残債（ビューカード）'},
+  {key:'残債_JCB',label:'残債（JCB）'},
+  {key:'残債_アコム',label:'残債（アコム）'},
+  {key:'NISA_積立_残',label:'NISA残高（積立）'},
+  {key:'NISA_成長_残',label:'NISA残高（成長）'},
+];
+
+let budgetData = {};
+let actualData = {};
+let charts = {};
+let dataLoaded = false;
+
+function yen(n){
+  const v = Math.round(Math.abs(n));
+  return (n < 0 ? '-' : '') + '¥' + v.toLocaleString('ja-JP');
+}
+function yenAbs(n){ return '¥' + Math.round(Math.abs(n)).toLocaleString('ja-JP'); }
+function n(v){ return (v === '' || v === '-' || v == null) ? 0 : Number(v) || 0; }
+
+function showStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!msg) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="status ${type}">${msg}</div>`;
+}
+
+async function loadData() {
+  showStatus('status-dash', 'スプレッドシートからデータ取得中…', 'loading');
+  try {
+    const res = await fetch(GAS_URL + '?action=getAll');
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    budgetData = json.budget || {};
+    actualData = json.actual || {};
+    dataLoaded = true;
+    showStatus('status-dash', '', '');
+    renderDash();
+    populateSelects();
+  } catch(e) {
+    showStatus('status-dash', 'データ取得エラー: ' + e.message, 'error');
+  }
+}
+
+function budgetKeys() {
+  return Object.keys(budgetData).sort((a,b) => {
+    const [ay,am] = a.split('-').map(Number);
+    const [by,bm] = b.split('-').map(Number);
+    return ay !== by ? ay - by : am - bm;
+  });
+}
+
+function populateSelects() {
+  const keys = budgetKeys();
+  const years = [...new Set(keys.map(k => k.split('-')[0]))];
+  const now = new Date();
+  const cy = String(now.getFullYear()), cm = String(now.getMonth() + 1);
+
+  ['entry-year','cmp-year'].forEach(id => {
+    const el = document.getElementById(id);
+    el.innerHTML = years.map(y => `<option ${y===cy?'selected':''}>${y}</option>`).join('');
+  });
+  const months = [5,6,7,8,9,10,11,12];
+  ['entry-month','cmp-month'].forEach(id => {
+    const el = document.getElementById(id);
+    el.innerHTML = months.map(m => `<option value="${m}" ${String(m)===cm?'selected':''}>${m}月</option>`).join('');
+  });
+  document.getElementById('entry-year').addEventListener('change', loadEntryData);
+  document.getElementById('entry-month').addEventListener('change', loadEntryData);
+  loadEntryData();
+  renderCompare();
+}
+
+function currentMonthKey() {
+  const n = new Date();
+  return n.getFullYear() + '-' + (n.getMonth() + 1);
+}
+
+function renderDash() {
+  if (!dataLoaded) return;
+  const cm = currentMonthKey();
+  const bm = budgetData[cm] || {};
+  const am = actualData[cm] || {};
+  const now = new Date();
+  document.getElementById('dash-month-label').textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月';
+
+  const bInc = n(bm.主収入)+n(bm.賞与)+n(bm.副収入)+n(bm.臨時収入);
+  const bExp = n(bm.生活支出)+n(bm.個人支出)+n(bm.臨時支出)+n(bm.ギャンブル);
+  const aInc = n(am.主収入)+n(am.賞与)+n(am.副収入)+n(am.臨時収入);
+  const aExp = n(am.生活支出)+n(am.個人支出)+n(am.臨時支出)+n(am.ギャンブル);
+  const hasActual = Object.keys(am).length > 2;
+
+  document.getElementById('dash-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">予算収支</div><div class="metric-value ${bInc-bExp>=0?'pos':'neg'}">${yen(bInc-bExp)}</div></div>
+    <div class="metric"><div class="metric-label">実績収支</div><div class="metric-value ${hasActual?(aInc-aExp>=0?'pos':'neg'):''}">${hasActual?yen(aInc-aExp):'—'}</div></div>
+    <div class="metric"><div class="metric-label">予算収入</div><div class="metric-value">${yenAbs(bInc)}</div></div>
+    <div class="metric"><div class="metric-label">実績収入</div><div class="metric-value ${hasActual?'pos':''}">${hasActual?yenAbs(aInc):'—'}</div></div>
+  `;
+
+  const keys = budgetKeys().slice(0, 8);
+  const labels = keys.map(k => k.split('-')[1] + '月');
+  const bCF = keys.map(k => n((budgetData[k]||{}).収支));
+  const aCF = keys.map(k => {
+    const a = actualData[k];
+    if (!a || Object.keys(a).length <= 2) return null;
+    return n(a.主収入)+n(a.賞与)+n(a.副収入)+n(a.臨時収入)-(n(a.生活支出)+n(a.個人支出)+n(a.臨時支出)+n(a.ギャンブル));
+  });
+
+  if (charts['dash']) { charts['dash'].destroy(); }
+  charts['dash'] = new Chart(document.getElementById('chart-dash'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {label:'予算',data:bCF,borderColor:'#378ADD',borderWidth:2,borderDash:[4,2],pointRadius:3,tension:0.3,fill:false},
+        {label:'実績',data:aCF,borderColor:'#1D9E75',borderWidth:2,pointRadius:3,tension:0.3,fill:false,spanGaps:false},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{grid:{display:false},ticks:{font:{size:10}}},
+      y:{ticks:{callback:v=>(v/10000).toFixed(0)+'万',font:{size:10}}}
+    }}
+  });
+
+  const sumEl = document.getElementById('dash-summary');
+  if (!hasActual) {
+    sumEl.innerHTML = '<div class="empty">今月の実績がまだ入力されていません</div>'; return;
+  }
+  const acc = n(am.みずほ)+n(am.ゆうちょ)+n(am.楽天);
+  const nisa = n(am.NISA_積立_残)+n(am.NISA_成長_残);
+  const debt = n(am.残債_ビューカード)+n(am.残債_JCB)+n(am.残債_アコム);
+  const net = acc + nisa - debt;
+  sumEl.innerHTML = `
+    <div class="row"><span class="row-label">収入</span><span class="row-value" style="color:var(--green)">${yenAbs(aInc)}</span></div>
+    <div class="row"><span class="row-label">支出</span><span class="row-value" style="color:var(--red)">${yenAbs(aExp)}</span></div>
+    <div class="row"><span class="row-label">収支</span><span class="row-value" style="color:${aInc-aExp>=0?'var(--green)':'var(--red)'}">${yen(aInc-aExp)}</span></div>
+    <div class="row"><span class="row-label">純資産（実績）</span><span class="row-value" style="color:${net>=0?'var(--green)':'var(--red)'};">${yen(net)}</span></div>
+    ${am.イベント ? `<div class="row"><span class="row-label">イベント</span><span class="row-value" style="font-size:12px">${am.イベント}</span></div>` : ''}
+  `;
+}
+
+function loadEntryData() {
+  const y = document.getElementById('entry-year').value;
+  const m = document.getElementById('entry-month').value;
+  const key = y + '-' + Number(m);
+  const bud = budgetData[key] || {};
+  const act = actualData[key] || {};
+
+  document.getElementById('entry-event').value = act.イベント || bud.イベント || '';
+
+  const mkField = (f) => `
+    <div class="input-field">
+      <div class="input-field-info">
+        <div class="input-field-name">${f.label}</div>
+        <div class="input-field-budget">予算: ${yenAbs(n(bud[f.key]))}</div>
+      </div>
+      <input type="number" id="ef-${f.key}" value="${act[f.key]||''}" placeholder="0" inputmode="numeric">
+    </div>`;
+
+  document.getElementById('entry-income').innerHTML = INCOME_FIELDS.map(mkField).join('');
+  document.getElementById('entry-expense').innerHTML = EXPENSE_FIELDS.map(mkField).join('');
+  document.getElementById('entry-accounts').innerHTML = ACCOUNT_FIELDS.map(f => `
+    <div class="input-field">
+      <div class="input-field-info"><div class="input-field-name">${f.label}</div></div>
+      <input type="number" id="ef-${f.key}" value="${act[f.key]||''}" placeholder="残高" inputmode="numeric">
+    </div>`).join('');
+  document.getElementById('entry-debts').innerHTML = DEBT_FIELDS.map(f => `
+    <div class="input-field">
+      <div class="input-field-info"><div class="input-field-name">${f.label}</div></div>
+      <input type="number" id="ef-${f.key}" value="${act[f.key]||''}" placeholder="残高" inputmode="numeric">
+    </div>`).join('');
+}
+
+async function saveEntry() {
+  const y = document.getElementById('entry-year').value;
+  const m = document.getElementById('entry-month').value;
+  const key = y + '-' + Number(m);
+  const btn = document.getElementById('save-btn');
+
+  const allFields = [...INCOME_FIELDS, ...EXPENSE_FIELDS, ...ACCOUNT_FIELDS, ...DEBT_FIELDS];
+  const data = { イベント: document.getElementById('entry-event').value };
+  allFields.forEach(f => {
+    const el = document.getElementById('ef-' + f.key);
+    if (el) data[f.key] = parseFloat(el.value) || 0;
+  });
+
+  // ローカルにも保存
+  actualData[key] = { ...actualData[key], ...data };
+
+  btn.textContent = '保存中…';
+  btn.disabled = true;
+  showStatus('status-entry', 'スプレッドシートに書き込み中…', 'loading');
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ year: Number(y), month: Number(m), data }),
+    });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    showStatus('status-entry', `${y}年${m}月を保存しました`, 'success');
+    setTimeout(() => showStatus('status-entry', '', ''), 3000);
+  } catch(e) {
+    showStatus('status-entry', 'エラー: ' + e.message, 'error');
+  } finally {
+    btn.textContent = 'スプレッドシートに保存';
+    btn.disabled = false;
+  }
+}
+
+function renderCompare() {
+  if (!dataLoaded) return;
+  const y = document.getElementById('cmp-year').value;
+  const m = document.getElementById('cmp-month').value;
+  const key = y + '-' + Number(m);
+  const bud = budgetData[key] || {};
+  const act = actualData[key] || {};
+  const hasAct = Object.keys(act).length > 2;
+
+  const cmpRow = (label, bKey, isExpense) => {
+    const bv = n(bud[bKey]);
+    const av = hasAct ? n(act[bKey]) : null;
+    const diff = av !== null ? av - bv : null;
+    const good = isExpense ? (diff !== null && diff <= 0) : (diff !== null && diff >= 0);
+    return `<div class="row">
+      <span class="row-label">${label}</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="badge badge-plan">${yenAbs(bv)}</span>
+        ${av !== null ? `<span class="badge badge-actual">${yenAbs(av)}</span>` : ''}
+        ${diff !== null && bv > 0 ? `<span class="badge ${good?'badge-pos':'badge-neg'}">${diff>=0?'+':''}${(diff/10000).toFixed(1)}万</span>` : ''}
+      </div>
+    </div>`;
+  };
+
+  document.getElementById('cmp-income').innerHTML =
+    cmpRow('主収入','主収入',false) + cmpRow('賞与','賞与',false) +
+    cmpRow('副収入','副収入',false) + cmpRow('臨時収入','臨時収入',false);
+
+  document.getElementById('cmp-expense').innerHTML =
+    cmpRow('生活支出','生活支出',true) + cmpRow('個人支出','個人支出',true) +
+    cmpRow('臨時支出','臨時支出',true) + cmpRow('返済（アコム）','返済_アコム',true) +
+    cmpRow('NISA積立','NISA_積立',false) + cmpRow('共通口座','共通口座',false);
+
+  const bInc = n(bud.主収入)+n(bud.賞与)+n(bud.副収入)+n(bud.臨時収入);
+  const bExp = n(bud.生活支出)+n(bud.個人支出)+n(bud.臨時支出)+n(bud.ギャンブル);
+  const aInc = hasAct ? n(act.主収入)+n(act.賞与)+n(act.副収入)+n(act.臨時収入) : null;
+  const aExp = hasAct ? n(act.生活支出)+n(act.個人支出)+n(act.臨時支出)+n(act.ギャンブル) : null;
+  const aNet = hasAct ? n(act.みずほ)+n(act.ゆうちょ)+n(act.楽天)+n(act.NISA_積立_残)+n(act.NISA_成長_残)-n(act.残債_ビューカード)-n(act.残債_JCB)-n(act.残債_アコム) : null;
+
+  document.getElementById('cmp-total').innerHTML = `
+    <div class="row"><span class="row-label">総収入</span><div style="display:flex;gap:6px">
+      <span class="badge badge-plan">${yenAbs(bInc)}</span>
+      ${aInc!==null?`<span class="badge badge-actual">${yenAbs(aInc)}</span>`:''}
+    </div></div>
+    <div class="row"><span class="row-label">総支出</span><div style="display:flex;gap:6px">
+      <span class="badge badge-plan">${yenAbs(bExp)}</span>
+      ${aExp!==null?`<span class="badge badge-actual">${yenAbs(aExp)}</span>`:''}
+    </div></div>
+    <div class="row"><span class="row-label">収支</span><div style="display:flex;gap:6px">
+      <span class="badge badge-plan">${yen(bInc-bExp)}</span>
+      ${aInc!==null?`<span class="badge badge-actual">${yen(aInc-aExp)}</span>`:''}
+    </div></div>
+    ${aNet!==null?`<div class="row"><span class="row-label">純資産（実績）</span><span class="row-value" style="color:${aNet>=0?'var(--green)':'var(--red)'}">${yen(aNet)}</span></div>`:''}
+  `;
+}
+
+function renderReport() {
+  if (!dataLoaded) return;
+  const range = document.getElementById('rpt-range').value;
+  let keys = budgetKeys();
+  if (range !== 'all') keys = keys.slice(0, parseInt(range));
+  const labels = keys.map(k => k.split('-')[1] + '月');
+
+  const bCF = keys.map(k => n((budgetData[k]||{}).収支));
+  const aCF = keys.map(k => {
+    const a = actualData[k];
+    if (!a || Object.keys(a).length <= 2) return null;
+    return n(a.主収入)+n(a.賞与)+n(a.副収入)+n(a.臨時収入)-(n(a.生活支出)+n(a.個人支出)+n(a.臨時支出)+n(a.ギャンブル));
+  });
+  const bAssets = keys.map(k => n((budgetData[k]||{}).収支 ? null : null)); // 予算の資産合計は収支の累積で近似
+  const aAssets = keys.map(k => {
+    const a = actualData[k];
+    if (!a || Object.keys(a).length <= 2) return null;
+    return n(a.みずほ)+n(a.ゆうちょ)+n(a.楽天)+n(a.NISA_積立_残)+n(a.NISA_成長_残)-n(a.残債_ビューカード)-n(a.残債_JCB)-n(a.残債_アコム);
+  });
+  const aDebt = keys.map(k => {
+    const a = actualData[k];
+    if (!a || Object.keys(a).length <= 2) return null;
+    return n(a.残債_ビューカード)+n(a.残債_JCB)+n(a.残債_アコム);
+  });
+
+  ['rpt-cf','rpt-assets','rpt-debt'].forEach(id => { if(charts[id]){charts[id].destroy();} });
+
+  charts['rpt-cf'] = new Chart(document.getElementById('chart-rpt-cf'), {
+    type:'line',
+    data:{labels,datasets:[
+      {label:'予算',data:bCF,borderColor:'#378ADD',borderWidth:2,borderDash:[4,2],pointRadius:3,tension:0.3,fill:false},
+      {label:'実績',data:aCF,borderColor:'#1D9E75',borderWidth:2,pointRadius:4,tension:0.3,fill:false,spanGaps:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:45,font:{size:10}}},
+      y:{ticks:{callback:v=>(v/10000).toFixed(0)+'万',font:{size:10}}}
+    }}
+  });
+
+  charts['rpt-assets'] = new Chart(document.getElementById('chart-rpt-assets'), {
+    type:'line',
+    data:{labels,datasets:[
+      {label:'実績純資産',data:aAssets,borderColor:'#1D9E75',borderWidth:2,pointRadius:4,tension:0.3,fill:false,spanGaps:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:45,font:{size:10}}},
+      y:{ticks:{callback:v=>(v/10000).toFixed(0)+'万',font:{size:10}}}
+    }}
+  });
+
+  charts['rpt-debt'] = new Chart(document.getElementById('chart-rpt-debt'), {
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'残債',data:aDebt,backgroundColor:'rgba(226,75,74,0.6)',borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:45,font:{size:10}}},
+      y:{ticks:{callback:v=>(v/10000).toFixed(0)+'万',font:{size:10}}}
+    }}
+  });
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  if (id === 'dash') renderDash();
+  else if (id === 'entry') loadEntryData();
+  else if (id === 'compare') renderCompare();
+  else if (id === 'report') renderReport();
+  window.scrollTo(0, 0);
+}
+
+loadData();
+</script>
+</body>
+</html>
