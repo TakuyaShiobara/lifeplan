@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="資産トラッカー">
+<title>資産成長トラッカー</title>
+<style>
+:root {
+  --bg: #F7F6F2;
+  --card: #FFFFFF;
+  --card-sunk: #F1EFE6;
+  --text: #1C1E1C;
+  --muted: #6B6E66;
+  --hint: #A3A599;
+  --border: rgba(28,30,28,0.09);
+  --border-md: rgba(28,30,28,0.16);
+  --green: #1FA971;
+  --green-deep: #0E5A45;
+  --green-bg: #E3F4EC;
+  --green-text: #0E5A45;
+  --red: #C24B3F;
+  --red-bg: #FBEAE6;
+  --red-text: #8C3A30;
+  --amber: #D98E2B;
+  --amber-bg: #FBEFDC;
+  --amber-text: #8A5A14;
+  --blue-bg: #E7F0F6;
+  --blue-text: #2A5A78;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14150F;
+    --card: #1E2018;
+    --card-sunk: #181A14;
+    --text: #ECEAE0;
+    --muted: #A0A293;
+    --hint: #6E7064;
+    --border: rgba(255,255,255,0.08);
+    --border-md: rgba(255,255,255,0.15);
+    --green: #3FCB91;
+    --green-deep: #6FDCAB;
+    --green-bg: #112B22;
+    --green-text: #6FDCAB;
+    --red: #E08577;
+    --red-bg: #2D1815;
+    --red-text: #F0A89C;
+    --amber: #EFB458;
+    --amber-bg: #2E2210;
+    --amber-text: #EFB458;
+    --blue-bg: #142733;
+    --blue-text: #8FC1DE;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh;padding-bottom:calc(74px + var(--safe-bottom))}
+*{font-variant-numeric:tabular-nums}
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:0.5px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;gap:3px;background:none;border:none;color:var(--hint);font-size:10.5px;cursor:pointer;transition:color .15s}
+.nav-item.active{color:var(--green-deep)}
+@media (prefers-color-scheme: dark){.nav-item.active{color:var(--green)}}
+.nav-icon{font-size:21px;line-height:1}
+.page{display:none;padding:calc(20px + var(--safe-top)) 16px 8px}
+.page.active{display:block}
+.page-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
+.page-title{font-size:21px;font-weight:500;letter-spacing:-0.3px}
+.page-sub{font-size:12.5px;color:var(--hint)}
+.card{background:var(--card);border-radius:var(--radius);border:0.5px solid var(--border);padding:18px 18px;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.3px;margin-bottom:14px}
+.hero{padding:22px 20px;border-radius:var(--radius);background:var(--card);border:0.5px solid var(--border);margin-bottom:14px;position:relative;overflow:hidden}
+.hero-label{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.hero-amount{font-size:36px;font-weight:500;letter-spacing:-1px;line-height:1.1}
+.hero-delta{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:500;margin-top:8px;padding:4px 10px;border-radius:20px}
+.hero-delta.pos{background:var(--green-bg);color:var(--green-text)}
+.hero-delta.neg{background:var(--red-bg);color:var(--red-text)}
+.spark-wrap{height:54px;margin-top:14px;position:relative}
+.metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.metric{background:var(--card-sunk);border-radius:var(--radius-sm);padding:12px 10px}
+.metric-label{font-size:10.5px;color:var(--muted);margin-bottom:4px}
+.metric-value{font-size:16px;font-weight:500;letter-spacing:-0.3px}
+.metric-value.pos{color:var(--green-deep)}
+.metric-value.neg{color:var(--red-text)}
+@media (prefers-color-scheme: dark){.metric-value.pos{color:var(--green)}}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.row:last-child{border-bottom:none}
+.row-label{font-size:13px;color:var(--muted)}
+.row-value{font-size:13.5px;font-weight:500}
+.badge{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.badge-green{background:var(--green-bg);color:var(--green-text)}
+.badge-red{background:var(--red-bg);color:var(--red-text)}
+.badge-amber{background:var(--amber-bg);color:var(--amber-text)}
+.badge-blue{background:var(--blue-bg);color:var(--blue-text)}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12.5px;color:var(--muted);font-weight:500;display:block;margin-bottom:6px}
+.form-hint{font-size:11px;color:var(--hint);margin-top:3px}
+input[type=number],input[type=text],input[type=date],select{width:100%;background:var(--card-sunk);border:0.5px solid var(--border-md);border-radius:var(--radius-sm);padding:11px 12px;font-size:15px;color:var(--text);-webkit-appearance:none;appearance:none;outline:none}
+input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(31,169,113,.14)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{width:100%;padding:14px;font-size:15px;font-weight:500;border-radius:var(--radius-sm);border:none;cursor:pointer;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(0.98)}
+.btn-primary{background:var(--green-deep);color:#fff}
+@media (prefers-color-scheme: dark){.btn-primary{background:var(--green);color:#0E1A14}}
+.btn-secondary{background:var(--card-sunk);border:0.5px solid var(--border-md);color:var(--text)}
+.btn-text{background:none;border:none;color:var(--green-deep);font-size:13px;font-weight:500;cursor:pointer;padding:4px 0}
+@media (prefers-color-scheme: dark){.btn-text{color:var(--green)}}
+.progress{height:6px;background:var(--card-sunk);border-radius:3px;margin-top:8px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:var(--green);transition:width .4s}
+.status{text-align:center;padding:11px;font-size:13px;border-radius:var(--radius-sm);margin-bottom:12px}
+.status.loading{background:var(--blue-bg);color:var(--blue-text)}
+.status.success{background:var(--green-bg);color:var(--green-text)}
+.status.error{background:var(--red-bg);color:var(--red-text)}
+.chart-wrap{position:relative;width:100%}
+.month-picker{display:flex;gap:8px;align-items:center;margin-bottom:16px}
+.month-picker select{flex:1}
+.empty{text-align:center;padding:28px 16px;color:var(--hint);font-size:13px}
+.input-field{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.input-field:last-child{border-bottom:none}
+.input-field-name{font-size:13px;font-weight:500}
+.input-field-budget{font-size:10.5px;color:var(--hint);margin-top:1px}
+.input-field input{width:118px;text-align:right;font-size:14px;background:var(--card-sunk);border:0.5px solid var(--border);border-radius:8px;padding:7px 8px;color:var(--text)}
+.goal-card{background:var(--card);border-radius:var(--radius);border:0.5px solid var(--border);padding:16px 18px;margin-bottom:12px}
+.goal-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.goal-name{font-size:15px;font-weight:500}
+.goal-pct{font-size:13px;font-weight:500;color:var(--green-deep)}
+@media (prefers-color-scheme: dark){.goal-pct{color:var(--green)}}
+.goal-amounts{font-size:12.5px;color:var(--muted);margin-top:2px}
+.goal-eta{font-size:12px;color:var(--hint);margin-top:8px;display:flex;align-items:center;gap:5px}
+.section-gap{height:6px}
+.fab-row{display:flex;gap:8px;margin-bottom:12px}
+.fab-row .btn{flex:1}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:flex-end;justify-content:center;z-index:200}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:var(--bg);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + var(--safe-bottom));max-height:85vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:500;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.icon-btn{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px;line-height:1}
+.tab-pills{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto}
+.pill{flex-shrink:0;padding:6px 13px;font-size:12.5px;font-weight:500;border-radius:20px;background:var(--card-sunk);color:var(--muted);border:0.5px solid var(--border);cursor:pointer}
+.pill.active{background:var(--green-deep);color:#fff;border-color:var(--green-deep)}
+@media (prefers-color-scheme: dark){.pill.active{background:var(--green);color:#0E1A14;border-color:var(--green)}}
+</style>
+</head>
+<body>
+
+<div id="page-home" class="page active">
+  <div class="page-header">
+    <span class="page-title">資産成長トラッカー</span>
+    <span class="page-sub" id="home-month-label"></span>
+  </div>
+  <div id="status-home"></div>
+
+  <div class="hero" id="hero-card">
+    <div class="hero-label">総資産</div>
+    <div class="hero-amount" id="hero-amount">—</div>
+    <div id="hero-delta-wrap"></div>
+    <div class="spark-wrap"><canvas id="chart-spark" role="img" aria-label="資産推移の簡易グラフ">資産推移</canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">今月の収支</div>
+    <div class="metrics" style="margin-bottom:0">
+      <div class="metric"><div class="metric-label">収入</div><div class="metric-value pos" id="m-income">—</div></div>
+      <div class="metric"><div class="metric-label">支出</div><div class="metric-value neg" id="m-expense">—</div></div>
+      <div class="metric"><div class="metric-label">収支</div><div class="metric-value" id="m-net">—</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">将来予測（現在のペースが続いた場合）</div>
+    <div id="forecast-box"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">目標の進捗</div>
+    <div id="home-goals-preview"></div>
+    <button class="btn-text" onclick="showPage('goals')" style="margin-top:8px">すべての目標を見る ›</button>
+  </div>
+</div>
+
+<div id="page-entry" class="page">
+  <div class="page-header"><span class="page-title">実績入力</span></div>
+  <div id="status-entry"></div>
+  <div class="month-picker">
+    <select id="entry-year"></select>
+    <select id="entry-month"></select>
+  </div>
+  <div class="card">
+    <div class="card-title">イベント</div>
+    <input type="text" id="entry-event" placeholder="例: 両家顔合わせ">
+  </div>
+  <div class="card">
+    <div class="card-title">収入</div>
+    <div id="entry-income"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">支出</div>
+    <div id="entry-expense"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">クレカ引落し</div>
+    <div id="entry-cc"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">口座残高（月末）</div>
+    <div id="entry-accounts"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">残債・NISA残高</div>
+    <div id="entry-debts"></div>
+  </div>
+  <button class="btn btn-primary" onclick="saveEntry()" id="save-btn">スプレッドシートに保存</button>
+  <div style="height:12px"></div>
+</div>
+
+<div id="page-goals" class="page">
+  <div class="page-header"><span class="page-title">目標管理</span></div>
+  <div id="status-goals"></div>
+  <button class="btn btn-secondary" onclick="openGoalModal(null)" style="margin-bottom:14px">+ 新しい目標を追加</button>
+  <div id="goals-list"></div>
+</div>
+
+<div id="page-report" class="page">
+  <div class="page-header"><span class="page-title">レポート</span></div>
+  <div class="tab-pills" id="rpt-pills">
+    <button class="pill active" data-rpt="assets" onclick="setRptTab('assets')">総資産推移</button>
+    <button class="pill" data-rpt="cashflow" onclick="setRptTab('cashflow')">収支推移</button>
+    <button class="pill" data-rpt="savings" onclick="setRptTab('savings')">貯蓄率</button>
+    <button class="pill" data-rpt="alloc" onclick="setRptTab('alloc')">資産内訳</button>
+    <button class="pill" data-rpt="year" onclick="setRptTab('year')">年間サマリー</button>
+  </div>
+
+  <div id="rpt-assets" class="rpt-section">
+    <div class="card">
+      <div class="card-title">総資産の推移</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-rpt-assets" role="img" aria-label="総資産推移グラフ">総資産推移</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">目標達成予測</div>
+      <div id="rpt-goal-forecast"></div>
+    </div>
+  </div>
+
+  <div id="rpt-cashflow" class="rpt-section" style="display:none">
+    <div class="card">
+      <div class="card-title">収入・支出・収支の推移</div>
+      <div style="display:flex;gap:12px;margin-bottom:8px;font-size:11px;color:var(--muted)">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#1FA971;display:inline-block"></span>収入</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#C24B3F;display:inline-block"></span>支出</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-rpt-cf" role="img" aria-label="収入支出推移グラフ">収入支出推移</canvas></div>
+    </div>
+  </div>
+
+  <div id="rpt-savings" class="rpt-section" style="display:none">
+    <div class="card">
+      <div class="card-title">貯蓄率の推移（(収入−支出)÷収入）</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-rpt-savings" role="img" aria-label="貯蓄率推移グラフ">貯蓄率推移</canvas></div>
+    </div>
+  </div>
+
+  <div id="rpt-alloc" class="rpt-section" style="display:none">
+    <div class="card">
+      <div class="card-title">資産内訳（現在）</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-rpt-alloc" role="img" aria-label="資産内訳グラフ">資産内訳</canvas></div>
+      <div id="alloc-legend" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div id="rpt-year" class="rpt-section" style="display:none">
+    <div class="card">
+      <div class="card-title">年間サマリー</div>
+      <div id="year-summary"></div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-item active" onclick="showPage('home')" id="nav-home">
+    <span class="nav-icon">⌂</span><span>ホーム</span>
+  </button>
+  <button class="nav-item" onclick="showPage('entry')" id="nav-entry">
+    <span class="nav-icon">✎</span><span>入力</span>
+  </button>
+  <button class="nav-item" onclick="showPage('goals')" id="nav-goals">
+    <span class="nav-icon">◎</span><span>目標</span>
+  </button>
+  <button class="nav-item" onclick="showPage('report')" id="nav-report">
+    <span class="nav-icon">↗</span><span>レポート</span>
+  </button>
+</nav>
+
+<div class="modal-overlay" id="goal-modal-overlay">
+  <div class="modal-sheet">
+    <div class="modal-title">
+      <span id="goal-modal-title">目標を追加</span>
+      <button class="icon-btn" onclick="closeGoalModal()" aria-label="閉じる">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">目標名</label>
+      <input type="text" id="goal-name" placeholder="例: 結婚式資金">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">目標額（円）</label>
+        <input type="number" id="goal-target" placeholder="2000000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">現在額（円）</label>
+        <input type="number" id="goal-current" placeholder="500000">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">開始日</label>
+        <input type="date" id="goal-start">
+      </div>
+      <div class="form-group">
+        <label class="form-label">目標日（任意）</label>
+        <input type="date" id="goal-deadline">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">メモ（任意）</label>
+      <input type="text" id="goal-memo" placeholder="例: 来年秋の挙式に向けて">
+    </div>
+    <div class="fab-row" style="margin-top:8px">
+      <button class="btn btn-secondary" id="goal-delete-btn" onclick="deleteGoalConfirm()" style="display:none">削除</button>
+      <button class="btn btn-primary" onclick="saveGoal()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwtT7Y9hCB95x1dDCP50FrKnyp-1pZ60QNbFzT-BoAinKz7UCmUd867Z8A1vXhRenCe/exec';
+const NISA_ANNUAL_RETURN = 0.05;
+
+const INCOME_FIELDS = [
+  {key:'主収入',label:'主収入'},
+  {key:'賞与',label:'賞与'},
+  {key:'副収入',label:'副収入'},
+  {key:'臨時収入',label:'臨時収入'},
+  {key:'立替経費',label:'立替経費（収入）'},
+];
+const EXPENSE_FIELDS = [
+  {key:'生活支出',label:'生活支出'},
+  {key:'個人支出',label:'個人支出'},
+  {key:'臨時支出',label:'臨時支出'},
+  {key:'ギャンブル',label:'支出（ギャンブル）'},
+  {key:'返済_アコム',label:'返済（アコム）'},
+  {key:'NISA_積立',label:'NISA（積立）'},
+  {key:'NISA_成長',label:'NISA（成長）'},
+  {key:'共通口座',label:'共通口座'},
+  {key:'立替経費_出',label:'立替経費（支出）'},
+];
+const CC_FIELDS = [
+  {key:'クレカ_ビュー',label:'クレカ引落し（ビューカード）'},
+  {key:'クレカ_JCB',label:'クレカ引落し（JCB）'},
+];
+const ACCOUNT_FIELDS = [
+  {key:'みずほ',label:'みずほ銀行'},
+  {key:'ゆうちょ',label:'ゆうちょ銀行'},
+  {key:'楽天',label:'楽天銀行'},
+];
+const DEBT_FIELDS = [
+  {key:'残債_ビューカード',label:'残債（ビューカード）'},
+  {key:'残債_JCB',label:'残債（JCB）'},
+  {key:'残債_アコム',label:'残債（アコム）'},
+  {key:'NISA_積立_残',label:'NISA残高（積立）'},
+  {key:'NISA_成長_残',label:'NISA残高（成長）'},
+];
+
+let budgetData = {};
+let actualData = {};
+let goalsData = [];
+let charts = {};
+let dataLoaded = false;
+let editingGoalName = null;
+
+function yen(v){
+  const r = Math.round(Math.abs(v));
+  return (v < 0 ? '-' : '') + '¥' + r.toLocaleString('ja-JP');
+}
+function yenAbs(v){ return '¥' + Math.round(Math.abs(v)).toLocaleString('ja-JP'); }
+function yenShort(v){
+  const abs = Math.abs(v);
+  const sign = v < 0 ? '-' : '';
+  if (abs >= 10000) return sign + (abs/10000).toFixed(abs>=1000000?0:1) + '万円';
+  return sign + Math.round(abs).toLocaleString('ja-JP') + '円';
+}
+function n(v){ return (v === '' || v === '-' || v == null) ? 0 : Number(v) || 0; }
+
+function showStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = msg ? `<div class="status ${type}">${msg}</div>` : '';
+}
+
+async function loadData() {
+  showStatus('status-home', 'スプレッドシートからデータ取得中…', 'loading');
+  try {
+    const res = await fetch(GAS_URL + '?action=getAll');
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    budgetData = json.budget || {};
+    actualData = json.actual || {};
+    goalsData = json.goals || [];
+    dataLoaded = true;
+    showStatus('status-home', '', '');
+    renderHome();
+    populateSelects();
+    renderGoals();
+  } catch(e) {
+    showStatus('status-home', 'データ取得エラー: ' + e.message, 'error');
+  }
+}
+
+function budgetKeys() {
+  return Object.keys(budgetData).sort((a,b) => {
+    const [ay,am] = a.split('-').map(Number);
+    const [by,bm] = b.split('-').map(Number);
+    return ay !== by ? ay - by : am - bm;
+  });
+}
+function actualKeysSorted() {
+  return Object.keys(actualData).filter(k => Object.keys(actualData[k]).length > 1).sort((a,b) => {
+    const [ay,am] = a.split('-').map(Number);
+    const [by,bm] = b.split('-').map(Number);
+    return ay !== by ? ay - by : am - bm;
+  });
+}
+function netWorthOf(a) {
+  return n(a.みずほ)+n(a.ゆうちょ)+n(a.楽天)+n(a.NISA_積立_残)+n(a.NISA_成長_残)-n(a.残債_ビューカード)-n(a.残債_JCB)-n(a.残債_アコム);
+}
+function currentMonthKey() {
+  const now = new Date();
+  return now.getFullYear() + '-' + (now.getMonth() + 1);
+}
+
+function populateSelects() {
+  const keys = budgetKeys();
+  const years = [...new Set(keys.map(k => k.split('-')[0]))];
+  const now = new Date();
+  const cy = String(now.getFullYear()), cm = String(now.getMonth() + 1);
+
+  const ys = document.getElementById('entry-year');
+  ys.innerHTML = years.map(y => `<option ${y===cy?'selected':''}>${y}</option>`).join('');
+  const months = [...new Set(keys.map(k=>Number(k.split('-')[1])))].sort((a,b)=>a-b);
+  const ms = document.getElementById('entry-month');
+  ms.innerHTML = months.map(m => `<option value="${m}" ${String(m)===cm?'selected':''}>${m}月</option>`).join('');
+  ys.addEventListener('change', loadEntryData);
+  ms.addEventListener('change', loadEntryData);
+  loadEntryData();
+}
+
+function renderHome() {
+  if (!dataLoaded) return;
+  const keys = actualKeysSorted();
+  const latestKey = keys[keys.length-1];
+  const prevKey = keys[keys.length-2];
+  const latest = latestKey ? actualData[latestKey] : null;
+  const prev = prevKey ? actualData[prevKey] : null;
+
+  const now = new Date();
+  document.getElementById('home-month-label').textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月';
+
+  if (!latest) {
+    document.getElementById('hero-amount').textContent = '—';
+    document.getElementById('hero-delta-wrap').innerHTML = '<div class="form-hint">まずは実績入力タブから今月のデータを入力しましょう</div>';
+    document.getElementById('m-income').textContent = '—';
+    document.getElementById('m-expense').textContent = '—';
+    document.getElementById('m-net').textContent = '—';
+    document.getElementById('forecast-box').innerHTML = '<div class="empty">実績データが2件以上あると将来予測が表示されます</div>';
+    renderGoalsPreview();
+    return;
+  }
+
+  const net = netWorthOf(latest);
+  document.getElementById('hero-amount').textContent = yen(net);
+  if (prev) {
+    const prevNet = netWorthOf(prev);
+    const diff = net - prevNet;
+    document.getElementById('hero-delta-wrap').innerHTML = `
+      <div class="hero-delta ${diff>=0?'pos':'neg'}">${diff>=0?'↗':'↘'} 前月比 ${yen(diff)}</div>
+    `;
+  } else {
+    document.getElementById('hero-delta-wrap').innerHTML = '';
+  }
+
+  const inc = n(latest.主収入)+n(latest.賞与)+n(latest.副収入)+n(latest.臨時収入);
+  const exp = n(latest.生活支出)+n(latest.個人支出)+n(latest.臨時支出)+n(latest.ギャンブル);
+  document.getElementById('m-income').textContent = yenAbs(inc);
+  document.getElementById('m-expense').textContent = yenAbs(exp);
+  const netEl = document.getElementById('m-net');
+  netEl.textContent = yen(inc-exp);
+  netEl.className = 'metric-value ' + (inc-exp>=0?'pos':'neg');
+
+  renderSparkline(keys);
+  renderForecast(keys);
+  renderGoalsPreview();
+}
+
+function renderSparkline(keys) {
+  const data = keys.map(k => netWorthOf(actualData[k]));
+  if (charts['spark']) charts['spark'].destroy();
+  if (data.length < 2) {
+    document.getElementById('chart-spark').parentElement.style.display = 'none';
+    return;
+  }
+  document.getElementById('chart-spark').parentElement.style.display = 'block';
+  const isPos = data[data.length-1] >= data[0];
+  charts['spark'] = new Chart(document.getElementById('chart-spark'), {
+    type: 'line',
+    data: { labels: keys, datasets: [{ data, borderColor: isPos ? '#1FA971' : '#C24B3F', borderWidth: 2, pointRadius: 0, tension: 0.35, fill: true, backgroundColor: isPos ? 'rgba(31,169,113,0.08)' : 'rgba(194,75,63,0.08)' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, elements: { line: { borderJoinStyle: 'round' } } }
+  });
+}
+
+function computeMonthlyAvgDelta(keys) {
+  if (keys.length < 2) return 0;
+  const first = netWorthOf(actualData[keys[0]]);
+  const last = netWorthOf(actualData[keys[keys.length-1]]);
+  return (last - first) / (keys.length - 1);
+}
+
+function renderForecast(keys) {
+  const box = document.getElementById('forecast-box');
+  if (keys.length < 2) {
+    box.innerHTML = '<div class="empty">実績データが2件以上あると将来予測が表示されます</div>';
+    return;
+  }
+  const latest = actualData[keys[keys.length-1]];
+  const cash = n(latest.みずほ)+n(latest.ゆうちょ)+n(latest.楽天)-n(latest.残債_ビューカード)-n(latest.残債_JCB)-n(latest.残債_アコム);
+  const nisa = n(latest.NISA_積立_残)+n(latest.NISA_成長_残);
+  const monthlyDelta = computeMonthlyAvgDelta(keys);
+  const cashMonthlyDelta = monthlyDelta; // 簡易化：現金分の月次変化は全体の増減から近似
+
+  function project(months) {
+    const cashPart = cash + cashMonthlyDelta * months;
+    const years = months / 12;
+    const nisaPart = nisa * Math.pow(1 + NISA_ANNUAL_RETURN, years);
+    return cashPart + nisaPart;
+  }
+
+  const y1 = project(12);
+  const y3 = project(36);
+  const current = cash + nisa;
+
+  box.innerHTML = `
+    <div class="row"><span class="row-label">現在の純資産</span><span class="row-value">${yen(current)}</span></div>
+    <div class="row"><span class="row-label">1年後の予測</span><span class="row-value" style="color:var(--green-deep)">${yen(y1)}</span></div>
+    <div class="row"><span class="row-label">3年後の予測</span><span class="row-value" style="color:var(--green-deep)">${yen(y3)}</span></div>
+    <div class="form-hint" style="margin-top:8px">直近の資産増加ペースとNISA想定年率${(NISA_ANNUAL_RETURN*100).toFixed(0)}%の複利から算出した参考値です</div>
+  `;
+}
+
+function renderGoalsPreview() {
+  const wrap = document.getElementById('home-goals-preview');
+  if (!goalsData.length) {
+    wrap.innerHTML = '<div class="empty">目標がまだ設定されていません</div>';
+    return;
+  }
+  wrap.innerHTML = goalsData.slice(0,2).map(g => {
+    const pct = g.目標額 > 0 ? Math.min(100, Math.round(g.現在額 / g.目標額 * 100)) : 0;
+    return `
+      <div style="margin-bottom:14px">
+        <div class="row" style="border-bottom:none;padding-bottom:4px">
+          <span class="row-label" style="font-weight:500;color:var(--text)">${g.目標名}</span>
+          <span class="badge badge-green">${pct}%</span>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  }).join('');
+}
+
+function loadEntryData() {
+  const y = document.getElementById('entry-year').value;
+  const m = document.getElementById('entry-month').value;
+  const key = y + '-' + Number(m);
+  const bud = budgetData[key] || {};
+  const act = actualData[key] || {};
+
+  document.getElementById('entry-event').value = act.イベント || bud.イベント || '';
+
+  const mkField = (f, withBudget) => `
+    <div class="input-field">
+      <div>
+        <div class="input-field-name">${f.label}</div>
+        ${withBudget ? `<div class="input-field-budget">予算: ${yenAbs(n(bud[f.key]))}</div>` : ''}
+      </div>
+      <input type="number" id="ef-${f.key}" value="${act[f.key]||''}" placeholder="0" inputmode="numeric">
+    </div>`;
+
+  document.getElementById('entry-income').innerHTML = INCOME_FIELDS.map(f=>mkField(f,true)).join('');
+  document.getElementById('entry-expense').innerHTML = EXPENSE_FIELDS.map(f=>mkField(f,true)).join('');
+  document.getElementById('entry-cc').innerHTML = CC_FIELDS.map(f=>mkField(f,false)).join('');
+  document.getElementById('entry-accounts').innerHTML = ACCOUNT_FIELDS.map(f=>mkField(f,false)).join('');
+  document.getElementById('entry-debts').innerHTML = DEBT_FIELDS.map(f=>mkField(f,false)).join('');
+}
+
+async function saveEntry() {
+  const y = document.getElementById('entry-year').value;
+  const m = document.getElementById('entry-month').value;
+  const key = y + '-' + Number(m);
+  const btn = document.getElementById('save-btn');
+
+  const allFields = [...INCOME_FIELDS, ...EXPENSE_FIELDS, ...CC_FIELDS, ...ACCOUNT_FIELDS, ...DEBT_FIELDS];
+  const data = { イベント: document.getElementById('entry-event').value };
+  allFields.forEach(f => {
+    const el = document.getElementById('ef-' + f.key);
+    if (el) data[f.key] = parseFloat(el.value) || 0;
+  });
+
+  actualData[key] = { ...actualData[key], ...data };
+
+  btn.textContent = '保存中…';
+  btn.disabled = true;
+  showStatus('status-entry', 'スプレッドシートに書き込み中…', 'loading');
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'saveActual', year: Number(y), month: Number(m), data }),
+    });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    showStatus('status-entry', `${y}年${m}月を保存しました`, 'success');
+    renderHome();
+    setTimeout(() => showStatus('status-entry', '', ''), 3000);
+  } catch(e) {
+    showStatus('status-entry', 'エラー: ' + e.message, 'error');
+  } finally {
+    btn.textContent = 'スプレッドシートに保存';
+    btn.disabled = false;
+  }
+}
+
+function monthsUntil(dateStr) {
+  if (!dateStr) return null;
+  const target = new Date(dateStr);
+  const now = new Date();
+  return (target.getFullYear()-now.getFullYear())*12 + (target.getMonth()-now.getMonth());
+}
+
+function estimateEtaText(goal) {
+  const keys = actualKeysSorted();
+  const monthlyDelta = computeMonthlyAvgDelta(keys);
+  if (monthlyDelta <= 0) return '現在のペースでは到達予測が立ちません';
+  const remaining = goal.目標額 - goal.現在額;
+  if (remaining <= 0) return '達成済みです';
+  const monthsNeeded = Math.ceil(remaining / monthlyDelta);
+  const eta = new Date();
+  eta.setMonth(eta.getMonth() + monthsNeeded);
+  return `${eta.getFullYear()}年${eta.getMonth()+1}月ごろに達成予測`;
+}
+
+function renderGoals() {
+  const wrap = document.getElementById('goals-list');
+  if (!goalsData.length) {
+    wrap.innerHTML = '<div class="empty">目標がまだありません。「+ 新しい目標を追加」から作成してください</div>';
+    return;
+  }
+  wrap.innerHTML = goalsData.map(g => {
+    const pct = g.目標額 > 0 ? Math.min(100, Math.round(g.現在額 / g.目標額 * 100)) : 0;
+    const eta = estimateEtaText(g);
+    return `
+      <div class="goal-card" onclick="openGoalModal('${g.目標名.replace(/'/g,"\\'")}')">
+        <div class="goal-head">
+          <span class="goal-name">${g.目標名}</span>
+          <span class="goal-pct">${pct}%</span>
+        </div>
+        <div class="goal-amounts">${yenAbs(g.現在額)} / ${yenAbs(g.目標額)}</div>
+        <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="goal-eta">${eta}</div>
+      </div>`;
+  }).join('');
+}
+
+function openGoalModal(name) {
+  editingGoalName = name;
+  const overlay = document.getElementById('goal-modal-overlay');
+  const delBtn = document.getElementById('goal-delete-btn');
+  if (name) {
+    const g = goalsData.find(x => x.目標名 === name);
+    document.getElementById('goal-modal-title').textContent = '目標を編集';
+    document.getElementById('goal-name').value = g.目標名;
+    document.getElementById('goal-target').value = g.目標額;
+    document.getElementById('goal-current').value = g.現在額;
+    document.getElementById('goal-start').value = g.開始日;
+    document.getElementById('goal-deadline').value = g.目標日;
+    document.getElementById('goal-memo').value = g.メモ;
+    delBtn.style.display = 'block';
+  } else {
+    document.getElementById('goal-modal-title').textContent = '目標を追加';
+    document.getElementById('goal-name').value = '';
+    document.getElementById('goal-target').value = '';
+    document.getElementById('goal-current').value = '';
+    document.getElementById('goal-start').value = new Date().toISOString().slice(0,10);
+    document.getElementById('goal-deadline').value = '';
+    document.getElementById('goal-memo').value = '';
+    delBtn.style.display = 'none';
+  }
+  overlay.classList.add('open');
+}
+function closeGoalModal() {
+  document.getElementById('goal-modal-overlay').classList.remove('open');
+}
+
+async function saveGoal() {
+  const name = document.getElementById('goal-name').value.trim();
+  if (!name) { showStatus('status-goals', '目標名を入力してください', 'error'); return; }
+  const goal = {
+    目標名: name,
+    目標額: parseFloat(document.getElementById('goal-target').value) || 0,
+    現在額: parseFloat(document.getElementById('goal-current').value) || 0,
+    開始日: document.getElementById('goal-start').value,
+    目標日: document.getElementById('goal-deadline').value,
+    メモ: document.getElementById('goal-memo').value,
+  };
+  showStatus('status-goals', '保存中…', 'loading');
+  try {
+    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'saveGoal', goal }) });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    const idx = goalsData.findIndex(g => g.目標名 === (editingGoalName || name));
+    if (idx >= 0) goalsData[idx] = goal; else goalsData.push(goal);
+    closeGoalModal();
+    renderGoals();
+    renderGoalsPreview();
+    showStatus('status-goals', '目標を保存しました', 'success');
+    setTimeout(() => showStatus('status-goals', '', ''), 2500);
+  } catch(e) {
+    showStatus('status-goals', 'エラー: ' + e.message, 'error');
+  }
+}
+
+async function deleteGoalConfirm() {
+  if (!editingGoalName) return;
+  showStatus('status-goals', '削除中…', 'loading');
+  try {
+    const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteGoal', name: editingGoalName }) });
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    goalsData = goalsData.filter(g => g.目標名 !== editingGoalName);
+    closeGoalModal();
+    renderGoals();
+    renderGoalsPreview();
+    showStatus('status-goals', '削除しました', 'success');
+    setTimeout(() => showStatus('status-goals', '', ''), 2500);
+  } catch(e) {
+    showStatus('status-goals', 'エラー: ' + e.message, 'error');
+  }
+}
+
+function setRptTab(tab) {
+  document.querySelectorAll('.rpt-section').forEach(s => s.style.display = 'none');
+  document.getElementById('rpt-' + tab).style.display = 'block';
+  document.querySelectorAll('#rpt-pills .pill').forEach(p => p.classList.remove('active'));
+  document.querySelector(`#rpt-pills .pill[data-rpt="${tab}"]`).classList.add('active');
+  if (tab === 'assets') renderRptAssets();
+  else if (tab === 'cashflow') renderRptCashflow();
+  else if (tab === 'savings') renderRptSavings();
+  else if (tab === 'alloc') renderRptAlloc();
+  else if (tab === 'year') renderRptYear();
+}
+
+function renderRptAssets() {
+  const keys = actualKeysSorted();
+  const labels = keys.map(k => k.split('-')[1] + '月');
+  const data = keys.map(k => netWorthOf(actualData[k]));
+  if (charts['rpt-assets']) charts['rpt-assets'].destroy();
+  if (!keys.length) {
+    document.getElementById('chart-rpt-assets').parentElement.innerHTML = '<div class="empty">実績データがありません</div>';
+  } else {
+    charts['rpt-assets'] = new Chart(document.getElementById('chart-rpt-assets'), {
+      type: 'line',
+      data: { labels, datasets: [{ label: '総資産', data, borderColor: '#1FA971', backgroundColor: 'rgba(31,169,113,0.08)', borderWidth: 2, pointRadius: 4, tension: 0.3, fill: true }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 45, font: { size: 10 } } }, y: { ticks: { callback: v => yenShort(v), font: { size: 10 } } } } }
+    });
+  }
+
+  const box = document.getElementById('rpt-goal-forecast');
+  if (!goalsData.length) {
+    box.innerHTML = '<div class="empty">目標がまだ設定されていません</div>';
+  } else {
+    box.innerHTML = goalsData.map(g => {
+      const eta = estimateEtaText(g);
+      const pct = g.目標額 > 0 ? Math.min(100, Math.round(g.現在額/g.目標額*100)) : 0;
+      return `<div class="row"><span class="row-label">${g.目標名}</span><div style="text-align:right"><span class="badge badge-green">${pct}%</span><div class="form-hint" style="margin-top:4px">${eta}</div></div></div>`;
+    }).join('');
+  }
+}
+
+function renderRptCashflow() {
+  const keys = actualKeysSorted();
+  const labels = keys.map(k => k.split('-')[1] + '月');
+  const inc = keys.map(k => { const a = actualData[k]; return n(a.主収入)+n(a.賞与)+n(a.副収入)+n(a.臨時収入); });
+  const exp = keys.map(k => { const a = actualData[k]; return n(a.生活支出)+n(a.個人支出)+n(a.臨時支出)+n(a.ギャンブル); });
+  if (charts['rpt-cf']) charts['rpt-cf'].destroy();
+  charts['rpt-cf'] = new Chart(document.getElementById('chart-rpt-cf'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: '収入', data: inc, backgroundColor: '#1FA971', borderRadius: 3 },
+      { label: '支出', data: exp, backgroundColor: '#C24B3F', borderRadius: 3 },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 45, font: { size: 10 } } }, y: { ticks: { callback: v => yenShort(v), font: { size: 10 } } } } }
+  });
+}
+
+function renderRptSavings() {
+  const keys = actualKeysSorted();
+  const labels = keys.map(k => k.split('-')[1] + '月');
+  const rate = keys.map(k => {
+    const a = actualData[k];
+    const inc = n(a.主収入)+n(a.賞与)+n(a.副収入)+n(a.臨時収入);
+    const exp = n(a.生活支出)+n(a.個人支出)+n(a.臨時支出)+n(a.ギャンブル);
+    if (inc <= 0) return 0;
+    return Math.round((inc-exp)/inc*1000)/10;
+  });
+  if (charts['rpt-savings']) charts['rpt-savings'].destroy();
+  charts['rpt-savings'] = new Chart(document.getElementById('chart-rpt-savings'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: '貯蓄率', data: rate, borderColor: '#1FA971', backgroundColor: 'rgba(31,169,113,0.08)', borderWidth: 2, pointRadius: 4, tension: 0.3, fill: true }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 45, font: { size: 10 } } }, y: { ticks: { callback: v => v + '%', font: { size: 10 } } } } }
+  });
+}
+
+function renderRptAlloc() {
+  const keys = actualKeysSorted();
+  if (!keys.length) {
+    document.getElementById('chart-rpt-alloc').parentElement.innerHTML = '<div class="empty">実績データがありません</div>';
+    return;
+  }
+  const latest = actualData[keys[keys.length-1]];
+  const cash = n(latest.みずほ)+n(latest.ゆうちょ)+n(latest.楽天);
+  const nisa = n(latest.NISA_積立_残)+n(latest.NISA_成長_残);
+  const debt = n(latest.残債_ビューカード)+n(latest.残債_JCB)+n(latest.残債_アコム);
+  const labels = ['現金・預金','投資（NISA）','負債'];
+  const data = [cash, nisa, debt];
+  const colors = ['#1FA971','#2A5A78','#C24B3F'];
+  if (charts['rpt-alloc']) charts['rpt-alloc'].destroy();
+  charts['rpt-alloc'] = new Chart(document.getElementById('chart-rpt-alloc'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+  });
+  const total = cash + nisa + debt;
+  document.getElementById('alloc-legend').innerHTML = labels.map((l,i) => `
+    <div class="row"><span class="row-label" style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};display:inline-block"></span>${l}</span><span class="row-value">${yenAbs(data[i])}</span></div>
+  `).join('');
+}
+
+function renderRptYear() {
+  const keys = actualKeysSorted();
+  const box = document.getElementById('year-summary');
+  if (!keys.length) { box.innerHTML = '<div class="empty">実績データがありません</div>'; return; }
+  const thisYear = new Date().getFullYear();
+  const yearKeys = keys.filter(k => Number(k.split('-')[0]) === thisYear);
+  if (!yearKeys.length) { box.innerHTML = '<div class="empty">今年の実績データがありません</div>'; return; }
+
+  let totalInc = 0, totalExp = 0;
+  yearKeys.forEach(k => {
+    const a = actualData[k];
+    totalInc += n(a.主収入)+n(a.賞与)+n(a.副収入)+n(a.臨時収入);
+    totalExp += n(a.生活支出)+n(a.個人支出)+n(a.臨時支出)+n(a.ギャンブル);
+  });
+  const firstNet = netWorthOf(actualData[yearKeys[0]]);
+  const lastNet = netWorthOf(actualData[yearKeys[yearKeys.length-1]]);
+  const assetGrowth = lastNet - firstNet;
+
+  box.innerHTML = `
+    <div class="row"><span class="row-label">年間収入</span><span class="row-value" style="color:var(--green-deep)">${yenAbs(totalInc)}</span></div>
+    <div class="row"><span class="row-label">年間支出</span><span class="row-value" style="color:var(--red-text)">${yenAbs(totalExp)}</span></div>
+    <div class="row"><span class="row-label">年間貯蓄額</span><span class="row-value">${yen(totalInc-totalExp)}</span></div>
+    <div class="row"><span class="row-label">年間資産増加額</span><span class="row-value" style="color:${assetGrowth>=0?'var(--green-deep)':'var(--red-text)'}">${yen(assetGrowth)}</span></div>
+  `;
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  if (id === 'home') renderHome();
+  else if (id === 'entry') loadEntryData();
+  else if (id === 'goals') renderGoals();
+  else if (id === 'report') setRptTab(document.querySelector('#rpt-pills .pill.active')?.dataset.rpt || 'assets');
+  window.scrollTo(0, 0);
+}
+
+loadData();
+</script>
+</body>
+</html>
