@@ -429,8 +429,13 @@ function budgetKeys() {
     return ay !== by ? ay - by : am - bm;
   });
 }
+function hasRealActualData(a) {
+  if (!a) return false;
+  const keys = ['主収入','賞与','副収入','臨時収入','生活支出','個人支出','臨時支出','ギャンブル','みずほ','ゆうちょ','楽天','NISA_積立_残','NISA_成長_残','残債_ビューカード','残債_JCB','残債_アコム'];
+  return keys.some(k => n(a[k]) !== 0);
+}
 function actualKeysSorted() {
-  return Object.keys(actualData).filter(k => Object.keys(actualData[k]).length > 1).sort((a,b) => {
+  return Object.keys(actualData).filter(k => hasRealActualData(actualData[k])).sort((a,b) => {
     const [ay,am] = a.split('-').map(Number);
     const [by,bm] = b.split('-').map(Number);
     return ay !== by ? ay - by : am - bm;
