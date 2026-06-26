@@ -175,11 +175,6 @@ input:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(31,
   </div>
 
   <div class="card">
-    <div class="card-title">将来予測（現在のペースが続いた場合）</div>
-    <div id="forecast-box"></div>
-  </div>
-
-  <div class="card">
     <div class="card-title">目標の進捗</div>
     <div id="home-goals-preview"></div>
     <button class="btn-text" onclick="showPage('goals')" style="margin-top:8px">すべての目標を見る ›</button>
@@ -484,7 +479,6 @@ function renderHome() {
     document.getElementById('m-income').textContent = '—';
     document.getElementById('m-expense').textContent = '—';
     document.getElementById('m-net').textContent = '—';
-    document.getElementById('forecast-box').innerHTML = '<div class="empty">実績データが2件以上あると将来予測が表示されます</div>';
     renderGoalsPreview();
     return;
   }
@@ -510,7 +504,6 @@ function renderHome() {
   netEl.className = 'metric-value ' + (inc-exp>=0?'pos':'neg');
 
   renderSparkline(keys);
-  renderForecast(keys);
   renderGoalsPreview();
 }
 
@@ -535,37 +528,6 @@ function computeMonthlyAvgDelta(keys) {
   const first = netWorthOf(actualData[keys[0]]);
   const last = netWorthOf(actualData[keys[keys.length-1]]);
   return (last - first) / (keys.length - 1);
-}
-
-function renderForecast(keys) {
-  const box = document.getElementById('forecast-box');
-  if (keys.length < 2) {
-    box.innerHTML = '<div class="empty">実績データが2件以上あると将来予測が表示されます</div>';
-    return;
-  }
-  const latest = actualData[keys[keys.length-1]];
-  const cash = n(latest.みずほ)+n(latest.ゆうちょ)+n(latest.楽天)-n(latest.残債_ビューカード)-n(latest.残債_JCB)-n(latest.残債_アコム);
-  const nisa = n(latest.NISA_積立_残)+n(latest.NISA_成長_残);
-  const monthlyDelta = computeMonthlyAvgDelta(keys);
-  const cashMonthlyDelta = monthlyDelta; // 簡易化：現金分の月次変化は全体の増減から近似
-
-  function project(months) {
-    const cashPart = cash + cashMonthlyDelta * months;
-    const years = months / 12;
-    const nisaPart = nisa * Math.pow(1 + NISA_ANNUAL_RETURN, years);
-    return cashPart + nisaPart;
-  }
-
-  const y1 = project(12);
-  const y3 = project(36);
-  const current = cash + nisa;
-
-  box.innerHTML = `
-    <div class="row"><span class="row-label">現在の純資産</span><span class="row-value">${yen(current)}</span></div>
-    <div class="row"><span class="row-label">1年後の予測</span><span class="row-value" style="color:var(--green-deep)">${yen(y1)}</span></div>
-    <div class="row"><span class="row-label">3年後の予測</span><span class="row-value" style="color:var(--green-deep)">${yen(y3)}</span></div>
-    <div class="form-hint" style="margin-top:8px">直近の資産増加ペースとNISA想定年率${(NISA_ANNUAL_RETURN*100).toFixed(0)}%の複利から算出した参考値です</div>
-  `;
 }
 
 function renderGoalsPreview() {
